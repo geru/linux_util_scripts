@@ -1,0 +1,41 @@
+#!/bin/bash
+CMD="${0##*/}"
+DESCR="rsync Drupal/YAD7 code minus the sites/default and hidden (git, idea, etc.) directories"
+SRC=""
+DEST="stage"
+bold=$(tput bold)
+underline=$(tput smul)
+nounderline=$(tput rmul)
+normal=$(tput sgr0)
+nl=$'\n'
+if [ $# -gt 0 ]; then
+  SRC=$1
+  if [ $# -gt 1 ]; then
+    DEST=$2
+  fi
+fi
+ERROR=""
+if [ ! -d $SRC ]; then
+  ERROR+="${bold}Error:${normal} Source directory ${underline}$SRC${nounderline} does not exist.${nl}"
+fi
+if [ ! $SRC ]; then
+  ERROR+="${bold}Error:${normal} Source directory is not set."
+fi  
+if [ ! -d $DEST ]; then
+  ERROR+="${bold}Error:${normal} Destination directory ${underline}$DEST${nounderline} does not exist.${nl}"
+fi
+if [ $# -gt 2 ]; then
+  ERROR+="${bold}Error:${normal} Too many parameters.${nl}"
+fi
+if [ ! -z "$ERROR" ]; then
+  echo -n "$ERROR"
+  echo "${bold}$CMD${normal}: ${DESCR}"
+  echo "  Usage: $CMD [source] [dest]  # ${underline}source${nounderline} has no default and ${underline}dest${nounderline} defaults to 'stage'"
+  echo "  Examples:"
+  echo "    $CMD local    # copy Drupal environment from ${underline}local${nounderline} to ${underline}stage${nounderline}"
+  echo "    $CMD dev live # copy Drupal environment from ${underline}dev${nounderline} to ${underline}live${nounderline}"
+  exit 1
+fi
+# echo "rsync -aP \"--exclude=.*\" \"--exclude=sites/*/files/*\" \"--exclude=sites/*/settings.php\" \"--include=sites/*/prebootstrap.inc\" $SRC/ $DEST"
+rsync -aP "--exclude=.*" "--exclude=sites/*/files" "--exclude=sites/*/settings.php" $SRC/ $DEST --delete
+exit 0

@@ -1,0 +1,30 @@
+#!/bin/bash
+shopt -s nullglob
+usage="Usage: $0 <target> <source1> ...<sourceN>"
+if [ $# -lt 1 ]; then
+  echo $usage
+  exit 1
+fi
+dest="\"$1\""
+shift
+tfile=$(mktemp /tmp/pdf_merge.XXXXXXXXX)
+if [[ $1 == "" ]]; then
+filelist=" $dest"
+else
+filelist=""
+while [[ $# != 0 ]]; do
+filelist="$filelist \"$(echo $1)\""
+shift
+done
+fi
+if [[ $filelist == " \"\"" ]]; then
+  echo "No source files given"
+  echo $usage
+  exit 1
+fi
+echo "Merging $filelist\n=> $tfile"
+eval "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$tfile $filelist"
+eval "chmod --reference=$dest $tfile"
+eval "chown --reference=$dest $tfile"
+eval "mv $tfile $dest"
+exit

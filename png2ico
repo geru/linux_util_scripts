@@ -1,0 +1,14 @@
+#!/bin/bash
+my_name=$(basename -- "$0")
+if [ $# -lt 1 ]; then
+  echo "Usage: $my_name imageroot[.PNG]"
+  echo "Purpose: Create multi-icon favicon.ico file from PNG"
+  echo "Eg: $my_name favicon"
+  exit 1
+fi
+convert -resize x16 $1.png $1-16.png
+convert -resize x32 $1.png $1-32.png
+convert -resize x48 $1.png $1-48.png
+convert -resize x64 $1.png $1-64.png
+convert $1-16.png $1-32.png $1-48.png $1-64.png $1.ico
+

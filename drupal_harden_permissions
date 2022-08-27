@@ -1,0 +1,10 @@
+#!/bin/bash
+merootuser=$(whoami)
+sudo chown -R $merootuser:www-data *
+sudo find . -type d -exec chmod 750 '{}' \;
+sudo find . -type f -exec chmod 640 '{}' \;
+for d in sites/*/files
+do
+   sudo find $d -type d -exec chmod 770 '{}' \;
+   sudo find $d -type f -exec chmod 660 '{}' \;
+done

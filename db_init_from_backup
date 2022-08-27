@@ -1,0 +1,10 @@
+#!/bin/bash
+my_name=$(basename -- "$0")
+if [ $# -lt 3 ]; then
+  echo "Usage: $my_name site_env password init.gz"
+  echo "Purpose: Create a database accessible to the databasename at localhost using password and initialize from backup"
+  echo "Eg: $my_name hkern0_local myspecialpassword /srv/www/wd/.site-backups/dbname.sql.gz"
+  exit 1
+fi
+sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`$1\`;GRANT ALL PRIVILEGES ON \`$1\`.* TO '$1'@'localhost' IDENTIFIED BY '$2';"
+gunzip -c $3.sql.gz | mysql -u$1 -p$2 $1

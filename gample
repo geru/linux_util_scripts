@@ -1,0 +1,104 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use Data::Dumper;
+# use Getopt::ArgvFile home=>1; use this if you have the module installed and want to use .command configuration files
+
+my $copyrightstring = '';
+
+Getopt::Long::Configure( "bundling" );
+my %h = 
+( f => '',
+  h => '',
+  p => "x", d => '',
+  m => 50000,
+  w => 1200,
+  o => "AlphaBENT",
+  y => (localtime)[5] + 1900,
+  t => '© %s %s\\nAll rights reserved.',
+  O => '-gravity SouthEast -pointsize 16 -fill "#ff0" -draw \'text 5,5 "%s"\' ',
+  v => 
+    '-filter Triangle -define filter:support=2 -unsharp 0.25x0.08+8.3+0.045 ' .
+    '-dither ' .
+    '-quality 82 -define jpeg:fancy-upsampling=off -define png:compression-filter=5 -define png:compression-level=9 -define png:compression-strategy=1 -define png:exclude-chunk=all -interlace none ' .
+    '-strip ',
+  x => '',
+);
+my $syntaxshort = "$0 <options> filespecs\n" .
+  "    Resize graphics files using graphicsmagick convert program.\n" .
+  "  Options:\n" .
+  "    <--c|copyright (nocopyright)>\n" .
+  "    <--p|prefix targetDirPrefix ($h{p})>\n" .
+  "    <--w|width targetImageWidth ($h{w})>\n" .
+  "    <--f|force ($h{f})>\n" .
+  "    <--h|help>\n";
+my $syntaxlong =
+  "    <--d|dir targetDirectory (TargetDirPrefix . targetImageWidth)>\n" .
+  "    <--m|minsize MinimumSizeToCareAbout ($h{m})>\n" .
+  "    <--r|resize targetResizeSpec (targetImageWidth . '>')>\n" .
+  "    <--o|crowner ($h{o})>\n" .
+  "    <--y|cryear ($h{y})>\n" .
+  "    <--t|crtext ($h{t})>\n" .
+  "    <--O|croptions ($h{O})>\n" .
+  "    <--v|convertoptions ($h{v})>\n" .
+  "    <--x|extraoptions ()>\n" .
+  "Resizing options from:\n" .
+  "    https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/\n";
+
+die( $syntaxshort )
+unless GetOptions( \%h,
+  "f|force!",
+  "p|prefix:s",  "d|dir:s",
+  "m|minsize:i",
+  "w|width:i",   "r|resize:s",
+  "c|copyright!",
+  "o|crowner:s", "y|cryear:i",
+  "t|crtext:s",  "O|croptions:s",
+  "v|convertoptions:s",
+  "x|xtraoptions:s",
+  "h|help",
+  );
+die( $syntaxshort . $syntaxlong ) if $h{h};
+die( $syntaxshort ) unless @ARGV;
+
+$h{r} = $h{w} . '>' unless $h{r};
+$h{d} = $h{p} . $h{w} unless $h{d};
+$h{d} =~ s|/?$|/|;
+unless( -e $h{d} ) {
+  my $tmp = $h{d};
+  $tmp =~ s|/$||;
+  mkdir( $tmp );
+}
+if( $h{c} )
+{ my $tmp = sprintf $h{t}, $h{y}, $h{o};
+  $copyrightstring = sprintf $h{O}, $tmp;
+}
+
+# print Dumper( \%h );
+# die( "\nEarly return\n" );
+
+foreach my $file (@ARGV) {
+  if( -f $file ) {
+    $file =~ /(.*)\.(.+)$/;
+    my $basefilename = $1;
+    
+    my $fsize = -s $file;
+    if( !$h{f} && (($2 =~ /ico/i) || ($fsize < $h{m})) )
+    { print "Copying file $file\n"; 
+      system( "cp \"$file\" \"$h{d}$file\"" );
+    }
+    else
+    { print "Converting $file\n";
+      my $targetfname = "$h{d}$basefilename.jpg";
+      system( "gm convert " . $h{x} . " " . $h{v} . "-thumbnail \"$h{r}\" " . $copyrightstring .
+              "\"$file\" \"$targetfname\"" );
+#      print "\n";
+      if( ($? == -1) || !$h{c} && -e $targetfname && ((-s $file) < (-s $targetfname)) )
+      { print "\nCopying file $file instead ...\n"; 
+        system( "cp \"$file\"  \"$h{d}$file\"" );
+      }     
+    }
+  }
+}
+

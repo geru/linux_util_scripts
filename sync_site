@@ -1,0 +1,38 @@
+#!/bin/bash
+CMD="${0##*/}"
+SITEBAK=".site-backups"
+HTMLROOT=/srv/www
+if [ $# -lt 3 ]; then
+  echo "Usage: $CMD sitename <FROM | TO> domainname [HtmlRoot] [SiteBackupDir]"
+  exit 1
+fi
+if [ $# -gt 3 ]; then
+  HTMLROOT="$4"
+fi
+if [ $# -gt 4 ]; then
+  SITEBAK="$5"
+fi  
+operator="${2,,}"
+echo ${operator}
+case "$operator" in
+  to)
+    source="$HTMLROOT/$1/$SITEBAK"
+    if [ ! -e "$source" ]; then
+      echo "Source directory $source doesn't exist"
+      exit 1
+    fi
+    rsync -a $source/* $3:$HTMLROOT/$1/$SITEBAK
+    exit
+    ;;
+  from)
+    target="$HTMLROOT/$1/$SITEBAK"
+    if [ ! -e "$target" ]; then
+      echo "Target directory $target doesn't exist"
+      exit 1
+    fi
+    rsync -a $3:$HTMLROOT/$1/$SITEBAK/* $target
+    exit
+    ;;
+esac   
+echo "$CMD: operator $2 is invalid, please use FROM or TO (case insensitive)"
+exit 1
